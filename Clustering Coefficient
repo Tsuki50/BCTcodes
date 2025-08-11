@@ -1,7 +1,7 @@
 % =====================================================================
 %  Mean CLUSTERING COEFFICIENT  (log1p  ➜  rescale 0–1)   – 3 cohorts
 %  – Requires BCT on path:  clustering_coef_wu
-% =====================================================================
+
 
 if isempty(gcp('nocreate'))
     parpool;                           % open parallel pool (default workers)
