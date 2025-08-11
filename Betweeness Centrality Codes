@@ -1,0 +1,54 @@
+epsVal = 1e-6;  % protect against division by zero
+nRSN = numel(RSN_labels);
+
+%% Controls
+nC = numel(ControlVariables);
+BCnet_ctrl = zeros(nC, nRSN);
+parfor i = 1:nC
+    % 1) log-compress weights (no scaling)
+    W = log1p(ControlVariables(i).connectome);
+    
+    % 2) convert to distance
+    L_abs = 1 ./ (W + epsVal);
+    
+    % 3) compute nodal BC
+    bc_nodes = betweenness_wei(L_abs);
+    
+    % 4) average BC per RSN
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        BCnet_ctrl(i, r) = mean(bc_nodes(idx), 'omitnan');
+    end
+end
+
+%% Resective
+nR = numel(EpilepsyVariables);
+BCnet_res = zeros(nR, nRSN);
+parfor i = 1:nR
+    W = log1p(EpilepsyVariables(i).connectome);
+    L_abs = 1 ./ (W + epsVal);
+    bc_nodes = betweenness_wei(L_abs);
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        BCnet_res(i, r) = mean(bc_nodes(idx), 'omitnan');
+    end
+end
+
+%% VNS
+nV = numel(VnsVariables);
+BCnet_vns = zeros(nV, nRSN);
+parfor i = 1:nV
+    W = log1p(VnsVariables(i).connectome);
+    L_abs = 1 ./ (W + epsVal);
+    bc_nodes = betweenness_wei(L_abs);
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        BCnet_vns(i, r) = mean(bc_nodes(idx), 'omitnan');
+    end
+end
+
+%% Summary check
+fprintf('RSN‐averaged BC sizes:\n');
+fprintf(' Controls: [%d × %d]\n', size(BCnet_ctrl));
+fprintf(' Resective: [%d × %d]\n', size(BCnet_res));
+fprintf(' VNS      : [%d × %d]\n', size(BCnet_vns));
