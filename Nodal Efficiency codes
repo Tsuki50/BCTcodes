@@ -1,0 +1,50 @@
+nRSN = numel(RSN_labels);
+
+% Controls
+nC = numel(ControlVariables);
+NEnet_ctrl = zeros(nC, nRSN);
+parfor i = 1:nC
+    % 1) preprocess adjacency
+    W = log1p(ControlVariables(i).connectome);  
+    W = W ./ max(W(:));                       
+
+    % 2) compute nodal (global) efficiency
+    ne = efficiency_wei(W,1);                
+
+    % 3) average per RSN
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        NEnet_ctrl(i,r) = mean(ne(idx),'omitnan');
+    end
+end
+
+% Resective 
+nR = numel(EpilepsyVariables);
+NEnet_res = zeros(nR, nRSN);
+parfor i = 1:nR
+    W = log1p(EpilepsyVariables(i).connectome);
+    W = W ./ max(W(:));
+    ne = efficiency_wei(W,1);
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        NEnet_res(i,r) = mean(ne(idx),'omitnan');
+    end
+end
+
+% VNS
+nV = numel(VnsVariables);
+NEnet_vns = zeros(nV, nRSN);
+parfor i = 1:nV
+    W = log1p(VnsVariables(i).connectome);
+    W = W ./ max(W(:));
+    ne = efficiency_wei(W,1);
+    for r = 1:nRSN
+        idx = (RSN_assignment == r);
+        NEnet_vns(i,r) = mean(ne(idx),'omitnan');
+    end
+end
+
+fprintf('RSN‐averaged nodal efficiency sizes:\n');
+fprintf(' Controls: [%d × %d]\n', size(NEnet_ctrl));
+fprintf(' Resective: [%d × %d]\n', size(NEnet_res));
+fprintf(' VNS      : [%d × %d]\n', size(NEnet_vns));
