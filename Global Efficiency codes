@@ -1,33 +1,21 @@
-% -----------------------------------------------------------------
-%  GLOBAL EFFICIENCY  (log-normalised + 0–1 scaling)   —  parallel
-%  Assumes:
-%     • ControlVariables, EpilepsyVariables, VnsVariables
-%       are 1×N struct arrays whose **first field** is the 253×253
-%       weighted connectivity matrix.
-%     • Brain Connectivity Toolbox is on the path (efficiency_wei).
-% -----------------------------------------------------------------
-
 if isempty(gcp('nocreate'))
-    parpool;                       % open default parallel pool
+    parpool;                      
 end
 
-% ------ helper: returns the name of the FIRST field ---------------
-getFirstField = @(S) fieldnames(S);   % small trick: returns cell array
+getFirstField = @(S) fieldnames(S);  
 fCtrl = getFirstField(ControlVariables); fCtrl = fCtrl{1};
 fRes  = getFirstField(EpilepsyVariables); fRes  = fRes{1};
 fVNS  = getFirstField(VnsVariables);      fVNS  = fVNS{1};
 
-% ------ Controls --------------------------------------------------
 N = numel(ControlVariables);
 GE_ctrl = zeros(N,1);
 parfor k = 1:N
-    W = ControlVariables(k).(fCtrl);      % 253×253
-    W = log1p(W);                         % log-normalise
+    W = ControlVariables(k).(fCtrl);     
+    W = log1p(W);                        
     mx = max(W(:)); if mx>0, W = W/mx; end% scale 0–1
-    GE_ctrl(k) = efficiency_wei(W);       % global efficiency
+    GE_ctrl(k) = efficiency_wei(W);      
 end
 
-% ------ Resective------------------------------------------
 N = numel(EpilepsyVariables);
 GE_res = zeros(N,1);
 parfor k = 1:N
@@ -37,7 +25,6 @@ parfor k = 1:N
     GE_res(k) = efficiency_wei(W);
 end
 
-% ------ VNS -------------------------------------------------------
 N = numel(VnsVariables);
 GE_vns = zeros(N,1);
 parfor k = 1:N
@@ -47,7 +34,6 @@ parfor k = 1:N
     GE_vns(k) = efficiency_wei(W);
 end
 
-% ------ Quick sanity check ----------------------------------------
 fprintf('\nGlobal Efficiency (log-normalised & scaled)\n');
 fprintf('  Controls   : %.4f ± %.4f   (n=%d)\n', ...
         mean(GE_ctrl), std(GE_ctrl), numel(GE_ctrl));
