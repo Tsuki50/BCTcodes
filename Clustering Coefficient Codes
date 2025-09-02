@@ -1,37 +1,26 @@
-% =====================================================================
-%  Mean CLUSTERING COEFFICIENT  (log1p  ➜  rescale 0–1)   – 3 cohorts
-%  – Requires BCT on path:  clustering_coef_wu
-
-
 if isempty(gcp('nocreate'))
-    parpool;                           % open parallel pool (default workers)
+    parpool;                         
 end
 
-% ---------------------------------------------------------------------
-%  List cohorts for looping:  {structArray,  label,   outVarName}
-% ---------------------------------------------------------------------
 cohorts = { ...
     ControlVariables,   'Controls',   'C_ctrl'; ...
     EpilepsyVariables,  'Resective',  'C_res';  ...
     VnsVariables,       'VNS',        'C_vns'    };
 
-% ---------------------------------------------------------------------
-%  Main loop – one pass per cohort, with dot-style progress
-% ---------------------------------------------------------------------
 for c = 1:size(cohorts,1)
-    S      = cohorts{c,1};         % struct array (subjects × 1)
-    label  = cohorts{c,2};         % text label for printing
-    outVar = cohorts{c,3};         % workspace variable name
+    S      = cohorts{c,1};        
+    label  = cohorts{c,2};         
+    outVar = cohorts{c,3};         
     
     N = numel(S);
-    matField = fieldnames(S); matField = matField{1};  % first field
+    matField = fieldnames(S); matField = matField{1};  
 
     fprintf('[%s] computing mean clustering coefficient for %d subjects:\n', ...
             label, N);
 
-    C = zeros(N,1);               % result vector
-    dq = parallel.pool.DataQueue; % progress queue
-    afterEach(dq, @(~) fprintf('.'));   % print dot per subject
+    C = zeros(N,1);              
+    dq = parallel.pool.DataQueue; 
+    afterEach(dq, @(~) fprintf('.'));  
     
     parfor k = 1:N
         % 1) log-normalise
@@ -40,16 +29,13 @@ for c = 1:size(cohorts,1)
         mx = max(W(:));  if mx>0,  W = W ./ mx;  end
         % 3) nodal clustering, then mean across 253 nodes
         C(k) = mean( clustering_coef_wu(W), 'omitnan' );
-        send(dq,1);                % ping → prints a dot
+        send(dq,1);               
     end
     fprintf(' done.\n\n');
     
-    assignin('base', outVar, C);   % drop into caller workspace
+    assignin('base', outVar, C);   
 end
 
-% ---------------------------------------------------------------------
-%  Quick summary  (mean ± SD)
-% ---------------------------------------------------------------------
 fprintf('Mean Clustering Coefficient (log1p & scaled 0–1)\n');
 fprintf('  Controls   : %.4f ± %.4f   (n = %d)\n', ...
         mean(C_ctrl), std(C_ctrl), numel(C_ctrl));
